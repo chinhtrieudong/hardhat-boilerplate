@@ -29,6 +29,8 @@ function Header({}: Props) {
     setChainId(window.ethereum.chainId);
   }, [ethers]);
 
+
+  // change network
   const changeNetwork = async () => {
     if (!chainId) {
       toast.error("Please install Metamask");

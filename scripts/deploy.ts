@@ -1,6 +1,8 @@
 import { Contract } from "ethers";
 import { network, artifacts, ethers } from "hardhat";
 const path = require("path");
+import { MonoNFT } from "../typechain-types";
+const fs = require("fs");
 
 async function main() {
   // This is just a convenience check
@@ -24,9 +26,9 @@ async function main() {
   const Token = await ethers.getContractFactory("MonoNFT");
   const NFTMarketplace = await ethers.getContractFactory("NFTMarketplace");
 
-  const marketplaceContract = await NFTMarketplace.deploy();
+  const marketplaceContract = await NFTMarketplace.deploy(ethers.utils.parseEther("0.1"));
   await marketplaceContract.deployed();
-  const nft = await Token.deploy(marketplaceContract.address);
+  const nft = await Token.deploy(marketplaceContract.address) as MonoNFT;
   await nft.deployed();
 
   console.log("Token address:", nft.address);
@@ -41,14 +43,41 @@ async function main() {
     nftName: "MonoNFT"
   });
 
+  const targetAddress = "0xA03a771B9d4D36b05f28aAF6edD18A5730cf62C1";
+
   await deployer.sendTransaction({
-    to: "0xA03a771B9d4D36b05f28aAF6edD18A5730cf62C1",
-    value: ethers.utils.parseEther("100.0")
+    to: targetAddress,
+    value: ethers.utils.parseEther("100.0"),
+    gasLimit: 21001
   })
 
-  console.log("faucet to 0xA03a771B9d4D36b05f28aAF6edD18A5730cf62C1");
+  // const gasEstimate = await deployer.estimateGas({
+  //   to: targetAddress,
+  //   value: ethers.utils.parseEther("100.0"),
+  // });
+  // console.log("Estimated gas:", gasEstimate.toString());
 
+  console.log("faucet to " + targetAddress);
+
+  const count = 10;
+
+  // giveaway
+  await mintNft(targetAddress, count, nft);
+  console.log("[DEBUG] Minted " + count + " NFTs");
 }
+
+const mintNft = async (address: string, count: number, nft: MonoNFT) => {
+  const gasLimit = 3000000; // Example: Increase gas limit as needed
+  await Promise.all(
+    (
+      await Promise.all(
+        new Array(count).fill(0).map((_, i) => nft.giveAway(address, { gasLimit }))
+      )
+    ).map((tx) => tx.wait())
+  );
+};
+
+
 
 function saveFrontendFiles({
   nftContract,
@@ -63,11 +92,11 @@ function saveFrontendFiles({
     marketplaceName: string
   }
 ) {
-  const fs = require("fs");
+
   const contractsDir = path.join(__dirname, "..", "app", "contracts");
 
   // Ensure the parent directories exist
-  const appDir = path.join(__dirname, "..", "app");
+  // const appDir = path.join(__dirname, "..", "app");
 
 
   if (!fs.existsSync(contractsDir)) {

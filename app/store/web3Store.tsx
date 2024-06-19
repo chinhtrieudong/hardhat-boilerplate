@@ -72,7 +72,7 @@ export const useWeb3Store = create<Web3ModelStore>()(
         const provider = new ethers.providers.Web3Provider(window.ethereum);
 
         const { provider: ethereum } = provider;
-
+// change account and save session
         //@ts-ignore
         ethereum.on("accountsChanged", async (accounts: string[]) => {
           if (accounts?.length > 0) {
@@ -87,7 +87,6 @@ export const useWeb3Store = create<Web3ModelStore>()(
             });
           }
         });
-
         const accounts = await provider.listAccounts();
 
         if (accounts?.length > 0 && get().keepDisconnect === false) {
